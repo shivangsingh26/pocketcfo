@@ -1,0 +1,20 @@
+# Python dependencies for the PocketCFO API service.
+#
+# Local SDK path form used here:
+#   "../sdk" — a bare relative path line, which pip resolves as a local directory
+#   install (equivalent to `pip install ../sdk`).  This is the form Vercel's
+#   Python builder supports for editable/local path deps in requirements.txt.
+#
+#   Alternative that also works: `pocketcfo @ file:../sdk`  (PEP 440 URL form).
+#   We use the bare path here because it is simpler and works with both pip and
+#   the Vercel build environment.  If the bare path form fails on Vercel, switch
+#   to:  pocketcfo @ file:../sdk
+#
+# NOTE: this file is co-located with the api/ entrypoint.  Vercel installs it
+# relative to the service entrypoint directory (frontend/api/).  The path
+# "../sdk" therefore resolves to frontend/../sdk == the project sdk/ directory.
+# If Vercel runs pip from the project root instead, use "sdk" or "./sdk".
+
+../sdk
+fastapi[standard]>=0.128.1
+python-multipart>=0.0.9
