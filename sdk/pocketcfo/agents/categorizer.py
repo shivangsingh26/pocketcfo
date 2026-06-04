@@ -22,7 +22,8 @@ _SYSTEM = ("You categorize personal-finance transactions for an Indian user. "
 
 
 class Categorizer:
-    def __init__(self, client=None):
+    def __init__(self, client=None, rules: dict | None = None):
+        self.rules = rules or {}
         if client is None:
             import anthropic
             Config.require("ANTHROPIC_API_KEY")
@@ -30,6 +31,10 @@ class Categorizer:
         self.client = client
 
     def categorize(self, raw: RawTransaction) -> Transaction:
+        # Learned rule wins: skip the LLM and tag with full confidence.
+        ruled = self.rules.get(raw.merchant_key())
+        if ruled:
+            return Transaction(**raw.model_dump(), category_id=ruled, confidence=1.0)
         try:
             msg = self.client.messages.create(
                 model=Config.CLAUDE_MODEL,

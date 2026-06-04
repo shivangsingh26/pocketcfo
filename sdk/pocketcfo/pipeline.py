@@ -14,7 +14,10 @@ class Pipeline:
         gmail_fetch: Callable[[str], Iterable[dict]] | None = None,
     ):
         self.store = store or get_store()
-        self.categorizer = categorizer or Categorizer()
+        if categorizer is None:
+            rules = getattr(self.store, "get_rules", lambda: {})()
+            categorizer = Categorizer(rules=rules)
+        self.categorizer = categorizer
         self.gmail_fetch = gmail_fetch
 
     def _store_raws(self, raws: list[RawTransaction]) -> SyncResult:

@@ -8,6 +8,8 @@ _TOOLS = [
     {"name": "list_transactions", "description": "Recent transactions.",
      "input_schema": {"type": "object",
                       "properties": {"limit": {"type": "integer"}}}},
+    {"name": "budget_status", "description": "Per-category budget vs spend this month.",
+     "input_schema": {"type": "object", "properties": {}}},
 ]
 _SYSTEM = ("You are PocketCFO, a concise personal finance assistant. "
            "Use the tools to answer questions about the user's spending. "
@@ -29,6 +31,9 @@ class CFO:
             return [c.model_dump() for c in self.store.spend_by_category()]
         if name == "list_transactions":
             return self.store.list_transactions(limit=args.get("limit", 20))
+        if name == "budget_status":
+            fn = getattr(self.store, "budget_status", None)
+            return [b.model_dump() for b in fn()] if fn else []
         return {"error": f"unknown tool {name}"}
 
     def ask(self, question: str) -> ChatAnswer:
