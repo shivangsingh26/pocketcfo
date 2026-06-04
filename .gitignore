@@ -1,0 +1,11 @@
+.superpowers/
+sdk/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+frontend/node_modules/
+frontend/.next/
+frontend/.git/
+.env
+*.env.local
+.vercel
