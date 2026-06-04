@@ -5,6 +5,18 @@ create table if not exists categories (
   color text
 );
 
+-- Slice 3A: learned merchant -> category corrections
+create table if not exists merchant_rules (
+  merchant_key text primary key,
+  category_id  text not null references categories(id)
+);
+
+-- Slice 3B: per-category monthly budgets
+create table if not exists budgets (
+  category_id   text primary key references categories(id),
+  monthly_limit numeric(14,2) not null
+);
+
 create table if not exists transactions (
   id          uuid primary key default gen_random_uuid(),
   occurred_at timestamptz not null,
