@@ -1,0 +1,23 @@
+[project]
+name = "pocketcfo"
+version = "0.1.0"
+description = "PocketCFO agent engine: ingest, categorize, and analyze personal finances."
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.7",
+    "supabase>=2.5",
+    "anthropic>=0.40",
+    "pdfplumber>=0.11",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-mock>=3.12"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
