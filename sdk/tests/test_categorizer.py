@@ -43,3 +43,14 @@ def test_categorize_preserves_raw_fields():
     assert txn.merchant == "UBER"
     assert txn.amount == Decimal("250")
     assert txn.source == "gmail"
+
+
+def test_categorizer_uses_rule_without_llm():
+    """A learned merchant rule short-circuits the LLM (confidence 1.0)."""
+    class BoomClient:
+        def __init__(self): self.messages = self
+        def create(self, **k): raise AssertionError("LLM must not be called when a rule exists")
+    cat = Categorizer(client=BoomClient(), rules={"SWIGGY": "food"})
+    raw = _raw("swiggy")  # lowercase → normalizes to SWIGGY
+    txn = cat.categorize(raw)
+    assert txn.category_id == "food" and txn.confidence == 1.0
