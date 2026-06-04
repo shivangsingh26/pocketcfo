@@ -28,5 +28,55 @@ export async function getTransactions(): Promise<Txn[]> {
   return (await r.json()).transactions ?? [];
 }
 
+export type BudgetStatus = {
+  category_id: string;
+  label: string;
+  emoji?: string;
+  color?: string;
+  spent: string | number;
+  limit: string | number;
+  pct: number;
+  over: boolean;
+};
+
+export const CATEGORIES: { id: string; label: string; emoji: string }[] = [
+  { id: "food", label: "Food", emoji: "🍔" },
+  { id: "travel", label: "Travel", emoji: "✈️" },
+  { id: "clothing", label: "Clothing", emoji: "👕" },
+  { id: "groceries", label: "Groceries", emoji: "🛒" },
+  { id: "bills", label: "Bills", emoji: "🧾" },
+  { id: "entertainment", label: "Entertainment", emoji: "🎬" },
+  { id: "health", label: "Health", emoji: "💊" },
+  { id: "transport", label: "Transport", emoji: "🚗" },
+  { id: "shopping", label: "Shopping", emoji: "🛍️" },
+  { id: "other", label: "Other", emoji: "❓" },
+];
+
+export async function recategorize(transactionId: string | number, categoryId: string) {
+  const r = await fetch("/api/recategorize", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ transaction_id: transactionId, category_id: categoryId }),
+  });
+  if (!r.ok) throw new Error(`recategorize ${r.status}`);
+  return r.json();
+}
+
+export async function getBudgets(): Promise<{ statuses: BudgetStatus[]; nudges: string[] }> {
+  const r = await fetch("/api/budgets");
+  if (!r.ok) throw new Error(`budgets ${r.status}`);
+  return r.json();
+}
+
+export async function setBudget(categoryId: string, monthlyLimit: number) {
+  const r = await fetch("/api/budgets", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ category_id: categoryId, monthly_limit: monthlyLimit }),
+  });
+  if (!r.ok) throw new Error(`setBudget ${r.status}`);
+  return r.json();
+}
+
 export const inr = (v: string | number) =>
   "₹" + Number(v).toLocaleString("en-IN", { maximumFractionDigits: 0 });

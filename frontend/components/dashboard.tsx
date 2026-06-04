@@ -4,20 +4,27 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getSummary,
   getTransactions,
+  getBudgets,
+  setBudget,
+  recategorize,
   type CategoryTotal,
   type Txn,
+  type BudgetStatus,
 } from "@/lib/api";
 import { HeroCard } from "@/components/hero-card";
 import { CategoryBento } from "@/components/category-bento";
 import { TransactionList } from "@/components/transaction-list";
 import { SyncUpload } from "@/components/sync-upload";
 import { CFOChat } from "@/components/cfo-chat";
+import { Budgets } from "@/components/budgets";
 
 type LoadState = "loading" | "empty" | "error" | "ready";
 
 export function Dashboard() {
   const [categories, setCategories] = useState<CategoryTotal[]>([]);
   const [transactions, setTransactions] = useState<Txn[]>([]);
+  const [budgetStatuses, setBudgetStatuses] = useState<BudgetStatus[]>([]);
+  const [nudges, setNudges] = useState<string[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [errorMsg, setErrorMsg] = useState<string>("");
   // Ref so refresh() can guard against races without being a dep of the callback
@@ -26,13 +33,16 @@ export function Dashboard() {
   const refresh = useCallback(async () => {
     cancelRef.current = false;
     try {
-      const [cats, txns] = await Promise.all([
+      const [cats, txns, budgets] = await Promise.all([
         getSummary(),
         getTransactions(),
+        getBudgets(),
       ]);
       if (cancelRef.current) return;
       setCategories(cats);
       setTransactions(txns);
+      setBudgetStatuses(budgets.statuses);
+      setNudges(budgets.nudges);
       setLoadState(cats.length === 0 && txns.length === 0 ? "empty" : "ready");
     } catch (err) {
       if (cancelRef.current) return;
@@ -40,6 +50,22 @@ export function Dashboard() {
       setLoadState("error");
     }
   }, []);
+
+  const handleRecategorize = useCallback(
+    async (id: string | number, categoryId: string) => {
+      await recategorize(id, categoryId);
+      await refresh();
+    },
+    [refresh]
+  );
+
+  const handleSetBudget = useCallback(
+    async (categoryId: string, limit: number) => {
+      await setBudget(categoryId, limit);
+      await refresh();
+    },
+    [refresh]
+  );
 
   useEffect(() => {
     refresh();
@@ -123,6 +149,13 @@ export function Dashboard() {
         </section>
       )}
 
+      {/* Budgets + overspend nudges */}
+      <Budgets
+        statuses={budgetStatuses}
+        nudges={nudges}
+        onSetBudget={handleSetBudget}
+      />
+
       {/* Two-column: transactions (left) + CFO chat (right); stacks on mobile */}
       <section className="pc-txn-chat-grid">
         {/* Transactions column */}
@@ -135,7 +168,10 @@ export function Dashboard() {
               >
                 Recent transactions
               </h2>
-              <TransactionList transactions={transactions} />
+              <TransactionList
+                transactions={transactions}
+                onRecategorize={handleRecategorize}
+              />
             </>
           ) : (
             <p

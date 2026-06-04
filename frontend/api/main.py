@@ -29,13 +29,14 @@ TODO (Gmail OAuth wiring):
 
 import json
 import io
+import os
 from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from pocketcfo.store import Store
+from pocketcfo.store_factory import get_store
 from pocketcfo.pipeline import Pipeline
 from pocketcfo.agents.cfo import CFO
 
@@ -64,7 +65,7 @@ def _jsonable(data) -> str:
 async def summary():
     """Return total spend grouped by category."""
     try:
-        totals = [c.model_dump() for c in Store().spend_by_category()]
+        totals = [c.model_dump() for c in get_store().spend_by_category()]
         return JSONResponse(content=_jsonable({"categories": totals}))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -78,7 +79,7 @@ async def summary():
 async def transactions():
     """Return the 50 most recent transactions."""
     try:
-        rows = Store().list_transactions(limit=50)
+        rows = get_store().list_transactions(limit=50)
         return JSONResponse(content=_jsonable({"transactions": rows}))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -155,6 +156,92 @@ async def upload(file: Annotated[UploadFile, File()]):
 
 class ChatRequest(BaseModel):
     question: str
+
+
+class RecategorizeRequest(BaseModel):
+    transaction_id: int | str
+    category_id: str
+
+
+class BudgetRequest(BaseModel):
+    category_id: str
+    monthly_limit: float
+
+
+_CATEGORY_IDS = {
+    "food", "travel", "clothing", "groceries", "bills",
+    "entertainment", "health", "transport", "shopping", "other",
+}
+
+
+def _nudges(statuses) -> list[str]:
+    out = []
+    for s in statuses:
+        pct = int(round(s["pct"] * 100))
+        amt = f"INR {float(s['limit']):,.0f}"
+        if s["over"]:
+            out.append(f"⚠️ {s['emoji']} {s['label']} is OVER budget — {pct}% of {amt}.")
+        elif s["pct"] >= 0.8:
+            out.append(f"🔔 {s['emoji']} {s['label']} is at {pct}% of its {amt} budget.")
+    return out
+
+
+@app.post("/recategorize")
+async def recategorize(body: RecategorizeRequest):
+    if body.category_id not in _CATEGORY_IDS:
+        raise HTTPException(status_code=400, detail=f"unknown category {body.category_id}")
+    try:
+        result = get_store().recategorize(body.transaction_id, body.category_id)
+        return JSONResponse(content=_jsonable(result))
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@app.get("/budgets")
+async def budgets(year: int | None = None, month: int | None = None):
+    statuses = [b.model_dump() for b in get_store().budget_status(year, month)]
+    statuses = _jsonable({"v": statuses})["v"]
+    return JSONResponse(content={"statuses": statuses, "nudges": _nudges(statuses)})
+
+
+@app.post("/budgets")
+async def set_budget(body: BudgetRequest):
+    if body.category_id not in _CATEGORY_IDS:
+        raise HTTPException(status_code=400, detail=f"unknown category {body.category_id}")
+    try:
+        get_store().set_budget(body.category_id, body.monthly_limit)
+        return JSONResponse(content={"ok": True})
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.post("/ingest-sms")
+async def ingest_sms_endpoint(request: Request):
+    """Webhook for an Android SMS-forwarder app. Lenient about field names; the
+    forwarder POSTs the SMS text (JSON or form). Guarded by INGEST_SECRET when set
+    (via ?token= or X-Ingest-Secret header) so the public URL can't be spammed."""
+    secret = os.environ.get("INGEST_SECRET")
+    if secret:
+        provided = request.query_params.get("token") or request.headers.get("x-ingest-secret")
+        if provided != secret:
+            raise HTTPException(status_code=401, detail="invalid token")
+
+    body: dict = {}
+    try:
+        body = await request.json()
+    except Exception:
+        try:
+            body = dict(await request.form())
+        except Exception:
+            body = {}
+    text = (body.get("text") or body.get("message") or body.get("body")
+            or body.get("content") or body.get("msg") or "")
+    if not isinstance(text, str) or not text.strip():
+        raise HTTPException(status_code=400, detail="no SMS text found in request")
+
+    from pocketcfo.ingest.sms_bridge import ingest_sms
+    result = ingest_sms(text)
+    return JSONResponse(content=result.model_dump())
 
 
 @app.post("/chat")

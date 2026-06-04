@@ -1,7 +1,8 @@
-import { type Txn, inr } from "@/lib/api";
+import { type Txn, inr, CATEGORIES } from "@/lib/api";
 
 interface TransactionListProps {
   transactions: Txn[];
+  onRecategorize?: (transactionId: string | number, categoryId: string) => void;
 }
 
 function formatDate(iso: string): string {
@@ -15,7 +16,7 @@ function formatDate(iso: string): string {
   }
 }
 
-export function TransactionList({ transactions }: TransactionListProps) {
+export function TransactionList({ transactions, onRecategorize }: TransactionListProps) {
   if (transactions.length === 0) return null;
 
   return (
@@ -49,13 +50,33 @@ export function TransactionList({ transactions }: TransactionListProps) {
                 {formatDate(txn.occurred_at)}
               </span>
             </div>
-            <span
-              className="pc-tabular text-sm font-semibold ml-4 shrink-0"
-              style={{ color: amountColor }}
-            >
-              {sign}
-              {inr(txn.amount)}
-            </span>
+            <div className="flex items-center gap-3 ml-4 shrink-0">
+              <select
+                aria-label={`Category for ${txn.merchant ?? "transaction"}`}
+                value={txn.category_id}
+                onChange={(e) => onRecategorize?.(txn.id, e.target.value)}
+                disabled={!onRecategorize}
+                className="text-xs rounded-md px-2 py-1 cursor-pointer"
+                style={{
+                  background: "rgba(255,255,255,0.9)",
+                  border: "1px solid rgba(0,0,0,0.08)",
+                  color: "var(--pc-ink)",
+                }}
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.emoji} {c.label}
+                  </option>
+                ))}
+              </select>
+              <span
+                className="pc-tabular text-sm font-semibold"
+                style={{ color: amountColor }}
+              >
+                {sign}
+                {inr(txn.amount)}
+              </span>
+            </div>
           </div>
         );
       })}
