@@ -48,6 +48,9 @@ class Categorizer:
             block = next(b for b in msg.content if getattr(b, "type", None) == "tool_use")
             cat = block.input["category_id"]
             conf = float(block.input["confidence"])
-        except Exception:
+        except Exception as exc:
+            import sys
+            print(f"[categorizer] LLM categorization failed, falling back to 'other': "
+                  f"{type(exc).__name__}: {exc}", file=sys.stderr)
             cat, conf = "other", 0.0
         return Transaction(**raw.model_dump(), category_id=cat, confidence=conf)

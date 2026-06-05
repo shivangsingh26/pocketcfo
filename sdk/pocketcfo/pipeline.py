@@ -21,9 +21,16 @@ class Pipeline:
         self.gmail_fetch = gmail_fetch
 
     def _store_raws(self, raws: list[RawTransaction]) -> SyncResult:
-        txns = [self.categorizer.categorize(r) for r in raws]
-        needs_review = sum(1 for t in txns if t.confidence == 0.0)
-        inserted, skipped = self.store.insert_transactions(txns)
+        # Insert per-transaction so a long batch is timeout-resilient and fully
+        # re-runnable (dedup skips already-stored rows on a retry).
+        inserted = skipped = needs_review = 0
+        for raw in raws:
+            txn = self.categorizer.categorize(raw)
+            if txn.confidence == 0.0:
+                needs_review += 1
+            ins, skp = self.store.insert_transactions([txn])
+            inserted += ins
+            skipped += skp
         return SyncResult(inserted=inserted, skipped=skipped, needs_review=needs_review)
 
     def sync_gmail(self) -> SyncResult:
