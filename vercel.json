@@ -2,11 +2,16 @@
   "experimentalServices": {
     "frontend": {
       "entrypoint": "frontend",
-      "routePrefix": "/"
+      "routePrefix": "/",
+      "framework": "nextjs"
     },
     "api": {
       "entrypoint": "frontend/api/main.py",
-      "routePrefix": "/api"
+      "routePrefix": "/api",
+      "framework": "fastapi"
     }
-  }
+  },
+  "crons": [
+    { "path": "/api/cron/sync", "schedule": "0 7 * * *" }
+  ]
 }
