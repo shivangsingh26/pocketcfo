@@ -86,33 +86,51 @@ async def transactions():
 
 
 # ---------------------------------------------------------------------------
-# POST /sync
+# Gmail IMAP sync (manual button + scheduled cron share this)
 # ---------------------------------------------------------------------------
 
+def _run_gmail_imap_sync(days: int = 10):
+    """Pull ICICI emails from the last `days` via IMAP (App Password) and run the
+    pipeline. Returns (status_code, payload)."""
+    user = os.environ.get("GMAIL_USER")
+    pwd = os.environ.get("GMAIL_APP_PASSWORD")
+    if not user or not pwd:
+        return 409, {"error": "Gmail IMAP not configured (set GMAIL_USER + "
+                              "GMAIL_APP_PASSWORD)", "needs_gmail_imap": True}
+    from pocketcfo.ingest.imap_gmail import fetch_icici
+    from pocketcfo.ingest.gmail import fetch_icici_transactions
+    emails = fetch_icici(user, pwd, since_days=days)
+    parsed = fetch_icici_transactions(fetch_emails=lambda _q: emails)
+    result = Pipeline(gmail_fetch=lambda _q: emails).sync_gmail()
+    payload = result.model_dump()
+    payload["fetched"] = len(emails)
+    payload["parsed"] = len(parsed)
+    return 200, payload
+
+
 @app.post("/sync")
-async def sync():
-    """
-    Trigger a Gmail sync.
-
-    Slice 1 status: Gmail OAuth is NOT wired yet.  Pipeline() is constructed
-    without a gmail_fetch callable so sync_gmail() raises RuntimeError
-    ("Gmail not connected: no fetcher provided.").  This is caught and returned
-    as HTTP 409 with needs_gmail_auth=true so the frontend can redirect to the
-    OAuth flow when it is ready.
-
-    TODO: replace the no-fetcher Pipeline() call with:
-        from pocketcfo.ingest.gmail import make_fetcher  # future helper
-        Pipeline(gmail_fetch=make_fetcher(oauth_token)).sync_gmail()
-    """
+async def sync(days: int = 10):
+    """Manual 'Sync Gmail' button — pulls ICICI card-alert emails over IMAP.
+    Pass ?days=N to widen the window (e.g. one-time backfill)."""
     try:
-        # No fetcher provided — sync_gmail() will raise RuntimeError.
-        result = Pipeline().sync_gmail()
-        return JSONResponse(content=result.model_dump())
-    except RuntimeError as exc:
-        return JSONResponse(
-            status_code=409,
-            content={"error": str(exc), "needs_gmail_auth": True},
-        )
+        code, payload = _run_gmail_imap_sync(days=days)
+        return JSONResponse(status_code=code, content=payload)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"gmail sync failed: {exc}")
+
+
+@app.get("/cron/sync")
+async def cron_sync(request: Request):
+    """Scheduled Gmail IMAP sync (Vercel Cron). Vercel sends
+    Authorization: Bearer $CRON_SECRET when CRON_SECRET is set."""
+    expected = os.environ.get("CRON_SECRET")
+    if expected and request.headers.get("authorization") != f"Bearer {expected}":
+        raise HTTPException(status_code=401, detail="unauthorized")
+    try:
+        code, payload = _run_gmail_imap_sync()
+        return JSONResponse(status_code=code, content=payload)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"cron sync failed: {exc}")
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
