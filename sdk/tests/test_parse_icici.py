@@ -91,3 +91,8 @@ def test_real_payment_received_is_credit():
 
 def test_foreign_currency_skipped():
     assert parse_alert(REAL_USD) is None
+
+
+def test_card_alert_captures_time():
+    raw = parse_alert(REAL_CARD_ALERT)  # "...on Apr 10, 2026 at 05:53:41..."
+    assert (raw.occurred_at.hour, raw.occurred_at.minute, raw.occurred_at.second) == (5, 53, 41)

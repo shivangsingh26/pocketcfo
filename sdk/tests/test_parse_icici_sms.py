@@ -40,3 +40,20 @@ def test_account_credit_payer():
 
 def test_non_transaction_sms_returns_none():
     assert parse_sms("Your ICICI Bank OTP is 123456. Do not share it.") is None
+
+
+from datetime import datetime
+
+
+def test_upi_ref_extracted_and_distinguishes_same_amount():
+    a = parse_sms("ICICI Bank Acct XX402 debited for Rs 104.00 on 05-Jun-26; HOTTEY SMOKEY credited. UPI:615666787604.")
+    b = parse_sms("ICICI Bank Acct XX402 debited for Rs 104.00 on 05-Jun-26; HOTTEY SMOKEY credited. UPI:615616889572.")
+    assert a.ref == "615666787604" and b.ref == "615616889572"
+    # same amount/day/merchant but different UPI ref -> distinct dedup keys
+    assert a.dedup_key() != b.dedup_key()
+
+
+def test_occurred_at_override_used():
+    when = datetime(2026, 6, 5, 14, 30, 0)
+    r = parse_sms(CARD, occurred_at=when)
+    assert r.occurred_at == when

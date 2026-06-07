@@ -57,6 +57,13 @@ def parse_alert(text: str) -> Optional[RawTransaction]:
     if not amt or occurred is None:
         return None
 
+    # Card alerts carry a precise time ("... at 05:53:41"); fold it into
+    # occurred_at so same-day, same-amount txns stay distinct and ordered.
+    tm = re.search(r"\bat\s+(\d{1,2}):(\d{2}):(\d{2})\b", t)
+    if tm:
+        occurred = occurred.replace(hour=int(tm.group(1)), minute=int(tm.group(2)),
+                                    second=int(tm.group(3)))
+
     low = t.lower()
     is_card = "credit card" in low or "debit card" in low
     is_credit = (

@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from typing import Optional
 from ..models import RawTransaction
 from .icici import _parse_date, _num
@@ -23,14 +24,14 @@ def _merchant(text: str) -> Optional[str]:
     return None
 
 
-def parse_sms(text: str) -> Optional[RawTransaction]:
+def parse_sms(text: str, occurred_at: Optional[datetime] = None) -> Optional[RawTransaction]:
     """Parse one ICICI transaction SMS into a RawTransaction, or None if it isn't
-    a parseable INR/Rs transaction (e.g. an OTP or promo). Foreign currency and
-    non-transaction texts return None."""
+    a parseable INR/Rs transaction (e.g. an OTP or promo). `occurred_at` (the SMS
+    receipt time) is used when provided — SMS bodies carry no time of their own."""
     t = " ".join(text.split())
     amt = re.search(_AMOUNT, t)
-    occurred = _parse_date(t)
-    if not amt or occurred is None:
+    when = occurred_at or _parse_date(t)
+    if not amt or when is None:
         return None
 
     low = t.lower()
@@ -43,12 +44,15 @@ def parse_sms(text: str) -> Optional[RawTransaction]:
     else:
         direction = "debit"
 
+    ref_m = re.search(r"UPI:?\s*(\d{6,})", t)
+
     return RawTransaction(
-        occurred_at=occurred,
+        occurred_at=when,
         amount=_num(amt.group(1)),
         direction=direction,
         merchant=_merchant(t),
         account="ICICI-card" if is_card else "ICICI-bank",
         raw_text=text,
         source="sms",
+        ref=ref_m.group(1) if ref_m else None,
     )

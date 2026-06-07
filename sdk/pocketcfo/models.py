@@ -16,9 +16,13 @@ class RawTransaction(BaseModel):
     account: Optional[str] = None
     raw_text: str
     source: Source
+    ref: Optional[str] = None  # bank/UPI reference — distinguishes same-amount txns
 
     def dedup_key(self) -> str:
-        basis = f"{self.occurred_at.isoformat()}|{self.amount:.2f}|{self.merchant or ''}|{self.account or ''}"
+        # Include ref (UPI ref) so two same-amount, same-day txns are distinct,
+        # and the full timestamp so timed (card) txns don't collapse either.
+        basis = (f"{self.occurred_at.isoformat()}|{self.amount:.2f}|"
+                 f"{self.merchant or ''}|{self.account or ''}|{self.ref or ''}")
         return hashlib.sha1(basis.encode()).hexdigest()
 
     def merchant_key(self) -> str:

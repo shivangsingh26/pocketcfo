@@ -26,6 +26,7 @@ class Store:
                 skipped += 1
                 continue
             row = t.model_dump(mode="json")
+            row.pop("ref", None)  # ref isn't a table column; dedup_key already encodes it
             row["dedup_key"] = key
             self.client.table("transactions").insert(row).execute()
             existing.add(key)
