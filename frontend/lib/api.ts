@@ -8,12 +8,13 @@ export type CategoryTotal = {
 
 export type Txn = {
   id: string;
-  occurred_at: string;
+  occurred_at: string;   // ISO-8601, includes time
   amount: string | number;
-  direction: string;
+  direction: "debit" | "credit";
   merchant?: string;
   category_id: string;
-  source: string;
+  source: "gmail" | "sms" | "csv" | "pdf";
+  confidence?: number;
 };
 
 export async function getSummary(): Promise<CategoryTotal[]> {
@@ -22,8 +23,8 @@ export async function getSummary(): Promise<CategoryTotal[]> {
   return (await r.json()).categories ?? [];
 }
 
-export async function getTransactions(): Promise<Txn[]> {
-  const r = await fetch("/api/transactions");
+export async function getTransactions(limit = 200): Promise<Txn[]> {
+  const r = await fetch(`/api/transactions?limit=${limit}`);
   if (!r.ok) throw new Error(`transactions ${r.status}`);
   return (await r.json()).transactions ?? [];
 }
@@ -40,16 +41,16 @@ export type BudgetStatus = {
 };
 
 export const CATEGORIES: { id: string; label: string; emoji: string }[] = [
-  { id: "food", label: "Food", emoji: "🍔" },
-  { id: "travel", label: "Travel", emoji: "✈️" },
-  { id: "clothing", label: "Clothing", emoji: "👕" },
-  { id: "groceries", label: "Groceries", emoji: "🛒" },
-  { id: "bills", label: "Bills", emoji: "🧾" },
+  { id: "food",          label: "Food",          emoji: "🍔" },
+  { id: "travel",        label: "Travel",        emoji: "✈️" },
+  { id: "clothing",      label: "Clothing",      emoji: "👕" },
+  { id: "groceries",     label: "Groceries",     emoji: "🛒" },
+  { id: "bills",         label: "Bills",         emoji: "🧾" },
   { id: "entertainment", label: "Entertainment", emoji: "🎬" },
-  { id: "health", label: "Health", emoji: "💊" },
-  { id: "transport", label: "Transport", emoji: "🚗" },
-  { id: "shopping", label: "Shopping", emoji: "🛍️" },
-  { id: "other", label: "Other", emoji: "❓" },
+  { id: "health",        label: "Health",        emoji: "💊" },
+  { id: "transport",     label: "Transport",     emoji: "🚗" },
+  { id: "shopping",      label: "Shopping",      emoji: "🛍️" },
+  { id: "other",         label: "Other",         emoji: "❓" },
 ];
 
 export async function recategorize(transactionId: string | number, categoryId: string) {
@@ -78,5 +79,6 @@ export async function setBudget(categoryId: string, monthlyLimit: number) {
   return r.json();
 }
 
-export const inr = (v: string | number) =>
+/** Format a number/string as Indian-locale INR amount (no paise). */
+export const inr = (v: string | number): string =>
   "₹" + Number(v).toLocaleString("en-IN", { maximumFractionDigits: 0 });

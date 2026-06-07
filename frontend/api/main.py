@@ -76,10 +76,10 @@ async def summary():
 # ---------------------------------------------------------------------------
 
 @app.get("/transactions")
-async def transactions():
-    """Return the 50 most recent transactions."""
+async def transactions(limit: int = 200):
+    """Return recent transactions (newest first), default 200."""
     try:
-        rows = get_store().list_transactions(limit=50)
+        rows = get_store().list_transactions(limit=limit)
         return JSONResponse(content=_jsonable({"transactions": rows}))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -257,8 +257,17 @@ async def ingest_sms_endpoint(request: Request):
     if not isinstance(text, str) or not text.strip():
         raise HTTPException(status_code=400, detail="no SMS text found in request")
 
+    occurred_at = None
+    raw_when = body.get("occurred_at") or body.get("date")
+    if isinstance(raw_when, str) and raw_when.strip():
+        from datetime import datetime
+        try:
+            occurred_at = datetime.fromisoformat(raw_when.replace("Z", "+00:00"))
+        except ValueError:
+            occurred_at = None
+
     from pocketcfo.ingest.sms_bridge import ingest_sms
-    result = ingest_sms(text)
+    result = ingest_sms(text, occurred_at=occurred_at)
     return JSONResponse(content=result.model_dump())
 
 

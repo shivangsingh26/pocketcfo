@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Send, Bot } from "lucide-react";
 
 type Role = "user" | "cfo";
 
@@ -9,53 +10,61 @@ interface Message {
   text: string;
 }
 
+const SUGGESTED = [
+  "Where did most of my money go?",
+  "How much did I spend on food this month?",
+  "Am I over budget anywhere?",
+];
+
 export function CFOChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [inFlight, setInFlight] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   function scrollToBottom() {
-    // rAF so we scroll after the DOM has painted the new bubble
     requestAnimationFrame(() => {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     });
   }
 
-  async function handleSubmit() {
-    const question = input.trim();
-    if (!question || inFlight) return;
+  useEffect(() => {
+    if (messages.length > 0) scrollToBottom();
+  }, [messages]);
+
+  async function handleSubmit(question?: string) {
+    const q = (question ?? input).trim();
+    if (!q || inFlight) return;
 
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", text: question }]);
+    setMessages((prev) => [...prev, { role: "user", text: q }]);
     setInFlight(true);
-    scrollToBottom();
 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question: q }),
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = (await res.json()) as { text?: string };
-      const reply = data.text ?? "No response from server.";
-      setMessages((prev) => [...prev, { role: "cfo", text: reply }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "cfo", text: data.text ?? "No response from server." },
+      ]);
     } catch {
       setMessages((prev) => [
         ...prev,
         {
           role: "cfo",
-          text: "Sorry, I couldn't reach the CFO service right now. Please try again in a moment.",
+          text: "Sorry, I couldn't reach the CFO service right now. Please check the backend and try again.",
         },
       ]);
     } finally {
       setInFlight(false);
-      scrollToBottom();
     }
   }
 
@@ -68,35 +77,76 @@ export function CFOChat() {
 
   return (
     <div
-      className="pc-glass flex flex-col"
+      className="pc-glass"
       style={{
-        borderRadius: "var(--pc-radius)",
-        minHeight: "420px",
-        maxHeight: "520px",
+        borderRadius: "var(--pc-radius-lg)",
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        minHeight: 420,
+        maxHeight: 560,
       }}
     >
       {/* Header */}
       <div
-        className="px-5 py-4 border-b"
-        style={{ borderColor: "rgba(255,255,255,0.4)" }}
+        style={{
+          padding: "16px 20px",
+          borderBottom: "1px solid rgba(255,255,255,0.40)",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          flexShrink: 0,
+        }}
       >
-        <h2
-          className="text-sm font-semibold uppercase tracking-widest"
-          style={{ color: "var(--pc-ink)", opacity: 0.55 }}
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          aria-hidden="true"
         >
-          CFO Chat
-        </h2>
+          <Bot size={16} strokeWidth={1.8} color="var(--pc-ink)" />
+        </div>
+        <div>
+          <p className="pc-h3" style={{ fontSize: "0.875rem", lineHeight: 1.2 }}>CFO Chat</p>
+          <p style={{ fontSize: "0.7rem", color: "var(--pc-ink-3)", lineHeight: 1 }}>
+            AI-powered financial insights
+          </p>
+        </div>
       </div>
 
-      {/* Message list */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+      {/* Messages */}
+      <div
+        className="pc-scroll"
+        style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 10 }}
+        role="log"
+        aria-label="CFO chat messages"
+        aria-live="polite"
+      >
         {messages.length === 0 && (
-          <p
-            className="text-sm text-center mt-6"
-            style={{ color: "var(--pc-ink)", opacity: 0.35 }}
-          >
-            Ask your CFO anything about your finances.
-          </p>
+          <div style={{ textAlign: "center", paddingTop: 12 }}>
+            <p style={{ color: "var(--pc-ink-3)", fontSize: "0.875rem", marginBottom: 16 }}>
+              Ask your CFO anything about your finances.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
+              {SUGGESTED.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => handleSubmit(s)}
+                  disabled={inFlight}
+                  className="pc-btn pc-btn-ghost"
+                  style={{ fontSize: "0.78rem", padding: "6px 12px", fontWeight: 500 }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {messages.map((msg, i) => {
@@ -104,18 +154,20 @@ export function CFOChat() {
           return (
             <div
               key={i}
-              className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+              style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start" }}
             >
               <div
-                className="text-sm px-4 py-2.5 max-w-[82%]"
                 style={{
-                  background: isUser ? "#E0D7F5" : "rgba(255,255,255,0.85)",
-                  borderRadius: isUser
-                    ? "16px 16px 4px 16px"
-                    : "16px 16px 16px 4px",
-                  color: "var(--pc-ink)",
-                  border: "1px solid rgba(255,255,255,0.6)",
-                  lineHeight: "1.5",
+                  maxWidth: "84%",
+                  background: isUser ? "rgba(46,42,38,0.88)" : "rgba(255,255,255,0.85)",
+                  color: isUser ? "#F4F1EA" : "var(--pc-ink)",
+                  borderRadius: isUser ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                  padding: "10px 14px",
+                  fontSize: "0.875rem",
+                  lineHeight: "1.55",
+                  border: "1px solid rgba(255,255,255,0.5)",
+                  boxShadow: "var(--pc-shadow-sm)",
+                  wordBreak: "break-word",
                 }}
               >
                 {msg.text}
@@ -125,18 +177,32 @@ export function CFOChat() {
         })}
 
         {inFlight && (
-          <div className="flex justify-start">
+          <div style={{ display: "flex", justifyContent: "flex-start" }}>
             <div
-              className="text-sm px-4 py-2.5"
               style={{
                 background: "rgba(255,255,255,0.85)",
-                borderRadius: "16px 16px 16px 4px",
-                color: "var(--pc-ink)",
-                opacity: 0.55,
-                border: "1px solid rgba(255,255,255,0.6)",
+                borderRadius: "14px 14px 14px 4px",
+                padding: "10px 16px",
+                border: "1px solid rgba(255,255,255,0.5)",
+                display: "flex",
+                gap: 4,
+                alignItems: "center",
               }}
+              aria-label="CFO is typing"
             >
-              …
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: "var(--pc-ink-3)",
+                    display: "inline-block",
+                    animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+                  }}
+                />
+              ))}
             </div>
           </div>
         )}
@@ -146,41 +212,46 @@ export function CFOChat() {
 
       {/* Input row */}
       <div
-        className="px-4 py-3 flex gap-2 border-t"
-        style={{ borderColor: "rgba(255,255,255,0.4)" }}
+        style={{
+          padding: "12px 16px",
+          borderTop: "1px solid rgba(255,255,255,0.40)",
+          display: "flex",
+          gap: 8,
+          flexShrink: 0,
+        }}
       >
         <input
+          ref={inputRef}
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Where did my money go in May?"
+          placeholder="Where did my money go this month?"
           aria-label="Ask your CFO a question"
           disabled={inFlight}
-          className="flex-1 px-4 py-2 text-sm outline-none"
-          style={{
-            background: "rgba(255,255,255,0.6)",
-            borderRadius: "calc(var(--pc-radius) - 4px)",
-            border: "1px solid rgba(255,255,255,0.7)",
-            color: "var(--pc-ink)",
-          }}
+          className="pc-input"
+          style={{ flex: 1, minWidth: 0 }}
         />
         <button
-          onClick={handleSubmit}
+          onClick={() => handleSubmit()}
           disabled={inFlight || !input.trim()}
-          aria-label={inFlight ? "Sending" : "Ask"}
-          className="px-4 py-2 text-sm font-semibold shrink-0 transition-opacity disabled:opacity-40"
-          style={{
-            background: "#E0D7F5",
-            borderRadius: "calc(var(--pc-radius) - 4px)",
-            color: "var(--pc-ink)",
-            border: "none",
-            cursor: inFlight || !input.trim() ? "not-allowed" : "pointer",
-          }}
+          aria-label={inFlight ? "Sending…" : "Send message"}
+          className="pc-btn pc-btn-primary"
+          style={{ padding: "7px 12px", flexShrink: 0 }}
         >
-          {inFlight ? "…" : "Ask"}
+          <Send size={15} strokeWidth={2} aria-hidden="true" />
         </button>
       </div>
+
+      <style>{`
+        @keyframes bounce {
+          0%, 60%, 100% { transform: translateY(0); }
+          30% { transform: translateY(-4px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          @keyframes bounce { 0%, 100% { transform: none; } }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { RefreshCw, Upload, AlertTriangle, CheckCircle } from "lucide-react";
 
 interface SyncResult {
   inserted: number;
@@ -15,7 +16,8 @@ interface SyncUploadProps {
 type Status =
   | { kind: "idle" }
   | { kind: "busy" }
-  | { kind: "message"; text: string; isError?: boolean };
+  | { kind: "ok"; text: string }
+  | { kind: "error"; text: string };
 
 export function SyncUpload({ onChanged }: SyncUploadProps) {
   const [syncStatus, setSyncStatus] = useState<Status>({ kind: "idle" });
@@ -30,146 +32,126 @@ export function SyncUpload({ onChanged }: SyncUploadProps) {
       const res = await fetch("/api/sync", { method: "POST" });
 
       if (res.status === 409) {
-        setSyncStatus({
-          kind: "message",
-          text: "Connect Gmail to sync (coming soon)",
-          isError: false,
-        });
+        setSyncStatus({ kind: "ok", text: "Connect Gmail to sync" });
         return;
       }
 
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        setSyncStatus({
-          kind: "message",
-          text: body.error ?? `Sync failed (HTTP ${res.status})`,
-          isError: true,
-        });
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        setSyncStatus({ kind: "error", text: body.error ?? `Sync failed (${res.status})` });
         return;
       }
 
       const data = (await res.json()) as SyncResult;
-      setSyncStatus({
-        kind: "message",
-        text: `Synced: ${data.inserted} new, ${data.skipped} dup, ${data.needs_review} to review.`,
-      });
+      setSyncStatus({ kind: "ok", text: `${data.inserted} new · ${data.skipped} dup` });
       onChanged?.();
     } catch {
-      setSyncStatus({
-        kind: "message",
-        text: "Could not reach the sync service. Try again.",
-        isError: true,
-      });
+      setSyncStatus({ kind: "error", text: "Could not reach sync service." });
     }
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    // Reset input so the same file can be re-selected later
     if (fileInputRef.current) fileInputRef.current.value = "";
-
     if (!file) return;
+
     setUploadStatus({ kind: "busy" });
 
     try {
       const form = new FormData();
       form.append("file", file);
-
       const res = await fetch("/api/upload", { method: "POST", body: form });
 
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        setUploadStatus({
-          kind: "message",
-          text: body.error ?? `Upload failed (HTTP ${res.status})`,
-          isError: true,
-        });
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        setUploadStatus({ kind: "error", text: body.error ?? `Upload failed (${res.status})` });
         return;
       }
 
       const data = (await res.json()) as SyncResult;
-      setUploadStatus({
-        kind: "message",
-        text: `Imported: ${data.inserted} new, ${data.skipped} dup.`,
-      });
+      setUploadStatus({ kind: "ok", text: `${data.inserted} imported · ${data.skipped} dup` });
       onChanged?.();
     } catch {
-      setUploadStatus({
-        kind: "message",
-        text: "Upload failed. Please try again.",
-        isError: true,
-      });
+      setUploadStatus({ kind: "error", text: "Upload failed. Try again." });
     }
   }
 
+  const syncBusy = syncStatus.kind === "busy";
+  const uploadBusy = uploadStatus.kind === "busy";
+
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
       {/* Sync Gmail */}
       <button
         onClick={handleSync}
-        disabled={syncStatus.kind === "busy"}
-        className="px-4 py-2 text-sm font-semibold transition-opacity disabled:opacity-50"
-        style={{
-          background: "#CDEAD9",
-          borderRadius: "calc(var(--pc-radius) - 4px)",
-          color: "var(--pc-ink)",
-          border: "none",
-          cursor: syncStatus.kind === "busy" ? "not-allowed" : "pointer",
-        }}
+        disabled={syncBusy}
+        className="pc-btn pc-btn-success"
+        aria-label={syncBusy ? "Syncing Gmail…" : "Sync Gmail"}
       >
-        {syncStatus.kind === "busy" ? "Syncing…" : "Sync Gmail"}
+        <RefreshCw
+          size={14}
+          strokeWidth={2.2}
+          aria-hidden="true"
+          style={{ animation: syncBusy ? "spin 1s linear infinite" : "none" }}
+        />
+        {syncBusy ? "Syncing…" : "Sync Gmail"}
       </button>
 
-      {/* Upload CSV/PDF */}
+      {/* Upload */}
       <label
-        className="px-4 py-2 text-sm font-semibold transition-opacity cursor-pointer"
-        style={{
-          background: uploadStatus.kind === "busy" ? "rgba(199,224,244,0.5)" : "#C7E0F4",
-          borderRadius: "calc(var(--pc-radius) - 4px)",
-          color: "var(--pc-ink)",
-          border: "none",
-          opacity: uploadStatus.kind === "busy" ? 0.6 : 1,
-          pointerEvents: uploadStatus.kind === "busy" ? "none" : "auto",
-        }}
+        className="pc-btn pc-btn-info"
+        style={{ opacity: uploadBusy ? 0.55 : 1, pointerEvents: uploadBusy ? "none" : "auto", cursor: uploadBusy ? "not-allowed" : "pointer" }}
+        aria-label={uploadBusy ? "Uploading…" : "Upload CSV or PDF statement"}
       >
-        {uploadStatus.kind === "busy" ? "Uploading…" : "Upload CSV / PDF"}
+        <Upload size={14} strokeWidth={2.2} aria-hidden="true" />
+        {uploadBusy ? "Uploading…" : "Upload CSV / PDF"}
         <input
           ref={fileInputRef}
           type="file"
           accept=".csv,.pdf"
           className="sr-only"
           onChange={handleFileChange}
-          disabled={uploadStatus.kind === "busy"}
+          disabled={uploadBusy}
+          aria-hidden="true"
         />
       </label>
 
-      {/* Status messages */}
-      {syncStatus.kind === "message" && (
-        <span
-          className="text-xs"
-          style={{
-            color: syncStatus.isError ? "#b94a4a" : "var(--pc-ink)",
-            opacity: syncStatus.isError ? 1 : 0.65,
-          }}
-        >
+      {/* Sync status */}
+      {syncStatus.kind === "ok" && (
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.8125rem", color: "var(--pc-credit)", fontWeight: 500 }}>
+          <CheckCircle size={13} aria-hidden="true" />
           {syncStatus.text}
         </span>
       )}
-      {uploadStatus.kind === "message" && (
-        <span
-          className="text-xs"
-          style={{
-            color: uploadStatus.isError ? "#b94a4a" : "var(--pc-ink)",
-            opacity: uploadStatus.isError ? 1 : 0.65,
-          }}
-        >
+      {syncStatus.kind === "error" && (
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.8125rem", color: "var(--pc-danger)", fontWeight: 500 }}>
+          <AlertTriangle size={13} aria-hidden="true" />
+          {syncStatus.text}
+        </span>
+      )}
+
+      {/* Upload status */}
+      {uploadStatus.kind === "ok" && (
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.8125rem", color: "var(--pc-credit)", fontWeight: 500 }}>
+          <CheckCircle size={13} aria-hidden="true" />
           {uploadStatus.text}
         </span>
       )}
+      {uploadStatus.kind === "error" && (
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.8125rem", color: "var(--pc-danger)", fontWeight: 500 }}>
+          <AlertTriangle size={13} aria-hidden="true" />
+          {uploadStatus.text}
+        </span>
+      )}
+
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          @keyframes spin { to { transform: none; } }
+        }
+      `}</style>
     </div>
   );
 }
