@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Send, Bot } from "lucide-react";
+import { isDemo, sampleChatReply } from "@/lib/sample-data";
 
 type Role = "user" | "cfo";
 
@@ -42,6 +43,12 @@ export function CFOChat() {
     setInFlight(true);
 
     try {
+      if (isDemo()) {
+        await new Promise((r) => setTimeout(r, 400));
+        setMessages((prev) => [...prev, { role: "cfo", text: sampleChatReply(q) }]);
+        return;
+      }
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -210,7 +217,7 @@ export function CFOChat() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input row */}
+      {/* Input row (chat dot bounce uses the global keyframes in globals.css) */}
       <div
         style={{
           padding: "12px 16px",
@@ -242,16 +249,6 @@ export function CFOChat() {
           <Send size={15} strokeWidth={2} aria-hidden="true" />
         </button>
       </div>
-
-      <style>{`
-        @keyframes bounce {
-          0%, 60%, 100% { transform: translateY(0); }
-          30% { transform: translateY(-4px); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          @keyframes bounce { 0%, 100% { transform: none; } }
-        }
-      `}</style>
     </div>
   );
 }

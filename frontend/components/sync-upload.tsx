@@ -92,7 +92,7 @@ export function SyncUpload({ onChanged }: SyncUploadProps) {
           size={14}
           strokeWidth={2.2}
           aria-hidden="true"
-          style={{ animation: syncBusy ? "spin 1s linear infinite" : "none" }}
+          className={syncBusy ? "pc-spin" : undefined}
         />
         {syncBusy ? "Syncing…" : "Sync Gmail"}
       </button>
@@ -143,15 +143,6 @@ export function SyncUpload({ onChanged }: SyncUploadProps) {
           {uploadStatus.text}
         </span>
       )}
-
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          @keyframes spin { to { transform: none; } }
-        }
-      `}</style>
     </div>
   );
 }

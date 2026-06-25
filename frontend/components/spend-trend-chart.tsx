@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { type Txn, inr } from "@/lib/api";
+import { toDayKey } from "@/lib/date";
 import { ChartSkeleton } from "@/components/skeletons";
 
 interface SpendTrendChartProps {
@@ -22,7 +23,7 @@ function buildDailyPoints(transactions: Txn[], days: number): DayPoint[] {
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().slice(0, 10);
+    const dateStr = toDayKey(d);
     const dayName = d.toLocaleDateString("en-IN", { weekday: "short" });
     const dayNum = d.getDate();
     points.push({ label: `${dayName} ${dayNum}`, date: dateStr, debit: 0 });
@@ -32,7 +33,7 @@ function buildDailyPoints(transactions: Txn[], days: number): DayPoint[] {
 
   for (const txn of transactions) {
     if (txn.direction !== "debit") continue;
-    const date = txn.occurred_at.slice(0, 10);
+    const date = toDayKey(txn.occurred_at);
     const pt = pointMap.get(date);
     if (pt) pt.debit += Number(txn.amount);
   }
@@ -132,8 +133,8 @@ export function SpendTrendChart({ transactions, loading }: SpendTrendChartProps)
           >
             <defs>
               <linearGradient id="area-gradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#2E2A26" stopOpacity="0.15" />
-                <stop offset="100%" stopColor="#2E2A26" stopOpacity="0.02" />
+                <stop offset="0%" stopColor="var(--pc-accent)" stopOpacity="0.20" />
+                <stop offset="100%" stopColor="var(--pc-accent)" stopOpacity="0.02" />
               </linearGradient>
             </defs>
 
@@ -172,7 +173,7 @@ export function SpendTrendChart({ transactions, loading }: SpendTrendChartProps)
               <path
                 d={linePath}
                 fill="none"
-                stroke="var(--pc-ink)"
+                stroke="var(--pc-accent)"
                 strokeWidth="2"
                 strokeLinejoin="round"
                 strokeLinecap="round"
@@ -213,7 +214,7 @@ export function SpendTrendChart({ transactions, loading }: SpendTrendChartProps)
                     cx={c.x}
                     cy={c.y}
                     r={tooltip?.point === points[i] ? 5 : 3}
-                    fill="var(--pc-ink)"
+                    fill="var(--pc-accent)"
                     stroke="var(--pc-bg)"
                     strokeWidth="2"
                     style={{ transition: "r 100ms" }}
