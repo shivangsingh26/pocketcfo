@@ -302,9 +302,10 @@ export function AppShell() {
         <main
           id="main-content"
           className="pc-scroll"
-          style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}
+          style={{ flex: 1, overflowY: "auto", padding: "28px 32px 48px" }}
           aria-label={`${NAV_ITEMS.find((n) => n.id === view)?.label} view`}
         >
+         <div style={{ maxWidth: 1200, margin: "0 auto", width: "100%" }}>
           {/* Error banner (full error state, non-blocking) */}
           {loadState === "error" && (
             <div
@@ -362,6 +363,7 @@ export function AppShell() {
           {view === "insights" && (
             <InsightsView transactions={transactions} loading={isLoading} />
           )}
+         </div>
         </main>
       </div>
 

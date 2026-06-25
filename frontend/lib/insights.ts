@@ -134,7 +134,7 @@ export function monthOverMonth(txns: Txn[], now: Date = new Date()): CategoryDel
   return out.sort((a, b) => Math.abs(b.thisMonth - b.lastMonth) - Math.abs(a.thisMonth - a.lastMonth));
 }
 
-export type Savings = { income: number; spend: number; rate: number };
+export type Savings = { income: number; spend: number; rate: number; net: number };
 
 export function savingsRate(txns: Txn[], now: Date = new Date()): Savings {
   const y = now.getFullYear();
@@ -146,5 +146,5 @@ export function savingsRate(txns: Txn[], now: Date = new Date()): Savings {
     else spend += Number(t.amount);
   }
   const rate = income > 0 ? (income - spend) / income : 0;
-  return { income: Math.round(income), spend: Math.round(spend), rate };
+  return { income: Math.round(income), spend: Math.round(spend), rate, net: Math.round(income - spend) };
 }
