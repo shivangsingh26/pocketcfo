@@ -185,14 +185,15 @@ export function AppShell() {
                 width: 28,
                 height: 28,
                 borderRadius: 8,
-                background: "var(--pc-ink)",
+                background: "var(--pc-accent)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                boxShadow: "0 2px 8px var(--pc-accent-soft)",
               }}
               aria-hidden="true"
             >
-              <span style={{ color: "#F4F1EA", fontSize: "0.875rem", fontWeight: 700 }}>P</span>
+              <span style={{ color: "var(--pc-accent-ink)", fontSize: "0.875rem", fontWeight: 800 }}>P</span>
             </div>
             <span style={{ fontWeight: 700, fontSize: "1rem", color: "var(--pc-ink)", letterSpacing: "-0.01em" }}>
               PocketCFO
@@ -249,7 +250,7 @@ export function AppShell() {
         <header
           style={{
             height: "var(--pc-topbar-h)",
-            background: "rgba(244,241,234,0.88)",
+            background: "var(--pc-topbar-bg)",
             backdropFilter: "blur(10px)",
             borderBottom: "1px solid var(--pc-border)",
             display: "flex",

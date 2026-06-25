@@ -134,6 +134,7 @@
   /* Warm ivory base (luxe light) */
   --pc-bg: #F5F3EC;
   --pc-bg-2: #EEEAE0;       /* sidebar */
+  --pc-topbar-bg: rgba(245, 243, 236, 0.82);  /* translucent topbar */
   --pc-surface: rgba(255, 255, 255, 0.78);   /* card fill */
   --pc-surface-2: rgba(255, 255, 255, 0.62); /* glass fill */
   --pc-ink: #1C1A15;
@@ -168,6 +169,7 @@
   --pc-debit: var(--pc-ink);
   --pc-danger: #C7423B;
   --pc-danger-bg: #FBEAE8;
+  --pc-warn: #8B5A00;
   --pc-warn-bg: #F6E7C8;
   --pc-success-bg: #D6EBDD;
 
@@ -192,6 +194,7 @@
 .dark {
   --pc-bg: #0B0E0C;
   --pc-bg-2: #0F1310;
+  --pc-topbar-bg: rgba(11, 14, 12, 0.78);
   --pc-surface: #141815;
   --pc-surface-2: rgba(255, 255, 255, 0.045);
   --pc-ink: #ECEFEA;
@@ -223,6 +226,7 @@
   --pc-debit: var(--pc-ink);
   --pc-danger: #F0786F;
   --pc-danger-bg: #2A1614;
+  --pc-warn: #E6BE72;
   --pc-warn-bg: #2A2310;
   --pc-success-bg: #11271C;
 

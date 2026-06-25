@@ -11,7 +11,11 @@ export function HeroCard({ total, txnCount, period }: HeroCardProps) {
   return (
     <div
       className="pc-glass"
-      style={{ borderRadius: "var(--pc-radius-lg)", padding: "28px 32px" }}
+      style={{
+        borderRadius: "var(--pc-radius-lg)",
+        padding: "28px 32px",
+        backgroundImage: "linear-gradient(135deg, var(--pc-accent-soft) 0%, transparent 55%)",
+      }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
         <div>
@@ -39,7 +43,7 @@ export function HeroCard({ total, txnCount, period }: HeroCardProps) {
             width: 48,
             height: 48,
             borderRadius: "50%",
-            background: "var(--pc-accent-soft)",
+            background: "var(--pc-gold-soft)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -47,7 +51,7 @@ export function HeroCard({ total, txnCount, period }: HeroCardProps) {
           }}
           aria-hidden="true"
         >
-          <TrendingUp size={22} strokeWidth={1.8} color="var(--pc-accent)" />
+          <TrendingUp size={22} strokeWidth={1.8} color="var(--pc-gold)" />
         </div>
       </div>
     </div>
