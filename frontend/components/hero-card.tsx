@@ -39,7 +39,7 @@ export function HeroCard({ total, txnCount, period }: HeroCardProps) {
             width: 48,
             height: 48,
             borderRadius: "50%",
-            background: "rgba(255,255,255,0.6)",
+            background: "var(--pc-accent-soft)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -47,7 +47,7 @@ export function HeroCard({ total, txnCount, period }: HeroCardProps) {
           }}
           aria-hidden="true"
         >
-          <TrendingUp size={22} strokeWidth={1.8} color="var(--pc-ink)" />
+          <TrendingUp size={22} strokeWidth={1.8} color="var(--pc-accent)" />
         </div>
       </div>
     </div>

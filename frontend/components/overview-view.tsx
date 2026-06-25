@@ -1,6 +1,7 @@
 import { type CategoryTotal, type Txn, type BudgetStatus, inr } from "@/lib/api";
 import { HeroCard } from "@/components/hero-card";
 import { CategoryBento } from "@/components/category-bento";
+import { CategoryDonut } from "@/components/category-donut";
 import { SpendTrendChart } from "@/components/spend-trend-chart";
 import { TopCategoriesChart } from "@/components/top-categories-chart";
 import { CFOChat } from "@/components/cfo-chat";
@@ -24,6 +25,7 @@ export function OverviewView({
 }: OverviewViewProps) {
   const heroTotal = categories.reduce((sum, c) => sum + Number(c.total), 0);
   const debitCount = transactions.filter((t) => t.direction === "debit").length;
+  const period = new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" });
 
   const overBudget = budgetStatuses.filter((s) => s.over);
   const warningBudget = budgetStatuses.filter((s) => !s.over && s.pct >= 0.8);
@@ -34,7 +36,7 @@ export function OverviewView({
       {loading ? (
         <HeroSkeleton />
       ) : (
-        <HeroCard total={heroTotal} txnCount={debitCount} />
+        <HeroCard total={heroTotal} txnCount={debitCount} period={period} />
       )}
 
       {/* Two-column: left = charts, right = chat */}
@@ -56,6 +58,11 @@ export function OverviewView({
             </h3>
             <CategoryBento categories={categories} loading={loading} />
           </section>
+
+          {/* Category split donut */}
+          {!loading && categories.length > 0 && (
+            <CategoryDonut categories={categories} />
+          )}
 
           {/* Spend trend chart */}
           {loading ? (
