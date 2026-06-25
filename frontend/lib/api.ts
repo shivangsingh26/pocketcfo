@@ -40,18 +40,27 @@ export type BudgetStatus = {
   over: boolean;
 };
 
-export const CATEGORIES: { id: string; label: string; emoji: string }[] = [
-  { id: "food",          label: "Food",          emoji: "🍔" },
-  { id: "travel",        label: "Travel",        emoji: "✈️" },
-  { id: "clothing",      label: "Clothing",      emoji: "👕" },
-  { id: "groceries",     label: "Groceries",     emoji: "🛒" },
-  { id: "bills",         label: "Bills",         emoji: "🧾" },
-  { id: "entertainment", label: "Entertainment", emoji: "🎬" },
-  { id: "health",        label: "Health",        emoji: "💊" },
-  { id: "transport",     label: "Transport",     emoji: "🚗" },
-  { id: "shopping",      label: "Shopping",      emoji: "🛍️" },
-  { id: "other",         label: "Other",         emoji: "❓" },
+export const CATEGORIES: { id: string; label: string; emoji: string; color: string }[] = [
+  { id: "food",          label: "Food",          emoji: "🍔", color: "var(--pc-food)" },
+  { id: "travel",        label: "Travel",        emoji: "✈️", color: "var(--pc-travel)" },
+  { id: "clothing",      label: "Clothing",      emoji: "👕", color: "var(--pc-clothing)" },
+  { id: "groceries",     label: "Groceries",     emoji: "🛒", color: "var(--pc-groceries)" },
+  { id: "bills",         label: "Bills",         emoji: "🧾", color: "var(--pc-bills)" },
+  { id: "entertainment", label: "Entertainment", emoji: "🎬", color: "var(--pc-entertainment)" },
+  { id: "health",        label: "Health",        emoji: "💊", color: "var(--pc-health)" },
+  { id: "transport",     label: "Transport",     emoji: "🚗", color: "var(--pc-transport)" },
+  { id: "shopping",      label: "Shopping",      emoji: "🛍️", color: "var(--pc-shopping)" },
+  { id: "other",         label: "Other",         emoji: "❓", color: "var(--pc-other)" },
 ];
+
+const _CAT_BY_ID = new Map(CATEGORIES.map((c) => [c.id, c]));
+
+/** Canonical label/emoji/color for a category id, with a safe fallback. */
+export function categoryMeta(id: string): { id: string; label: string; emoji: string; color: string } {
+  const hit = _CAT_BY_ID.get(id);
+  if (hit) return hit;
+  return { id, label: id ? id[0].toUpperCase() + id.slice(1) : "Other", emoji: "💳", color: "var(--pc-other)" };
+}
 
 export async function recategorize(transactionId: string | number, categoryId: string) {
   const r = await fetch("/api/recategorize", {
@@ -79,6 +88,9 @@ export async function setBudget(categoryId: string, monthlyLimit: number) {
   return r.json();
 }
 
-/** Format a number/string as Indian-locale INR amount (no paise). */
-export const inr = (v: string | number): string =>
-  "₹" + Number(v).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+/** Format a number/string as Indian-locale INR amount (no paise). NaN-safe. */
+export const inr = (v: string | number): string => {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "₹0";
+  return "₹" + n.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+};

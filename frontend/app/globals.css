@@ -140,6 +140,13 @@
   --pc-border: rgba(46, 42, 38, 0.10);
   --pc-border-strong: rgba(46, 42, 38, 0.18);
 
+  /* Accent (indigo/violet) */
+  --pc-accent: #5B4BE0;
+  --pc-accent-strong: #4A3BD0;
+  --pc-accent-soft: rgba(91, 75, 224, 0.12);
+  --pc-accent-ink: #FFFFFF;
+  --pc-accent-ring: rgba(91, 75, 224, 0.40);
+
   /* Category pastels */
   --pc-food: #FFD8C2;
   --pc-travel: #FCEFB4;
@@ -174,6 +181,53 @@
   --pc-sidebar-w: 220px;
   --pc-topbar-h: 60px;
 }
+
+/* ── Dark theme overrides for the --pc-* token layer ──
+   Overlaps the shadcn .dark block above; both apply. This block sets the
+   --pc-* vars the app actually uses. */
+.dark {
+  --pc-bg: #1A1822;
+  --pc-bg-2: #221F2E;
+  --pc-ink: #F2EFFA;
+  --pc-ink-2: #C3BED2;
+  --pc-ink-3: #8B859B;
+  --pc-border: rgba(255, 255, 255, 0.10);
+  --pc-border-strong: rgba(255, 255, 255, 0.20);
+
+  --pc-accent: #8B7BFF;
+  --pc-accent-strong: #A593FF;
+  --pc-accent-soft: rgba(139, 123, 255, 0.18);
+  --pc-accent-ink: #16121F;
+  --pc-accent-ring: rgba(139, 123, 255, 0.45);
+
+  --pc-food: #5A3D32;
+  --pc-travel: #5A5230;
+  --pc-clothing: #463A57;
+  --pc-groceries: #2F4A3B;
+  --pc-bills: #2E4456;
+  --pc-entertainment: #553742;
+  --pc-health: #36492F;
+  --pc-transport: #564326;
+  --pc-shopping: #433A57;
+  --pc-other: #3A3744;
+
+  --pc-credit: #5DCB97;
+  --pc-debit: var(--pc-ink);
+  --pc-danger: #E4736C;
+  --pc-danger-bg: #3A2422;
+  --pc-warn-bg: #43391F;
+  --pc-success-bg: #244536;
+}
+
+/* Dark-aware surfaces (the glass/card/nav classes hardcode white in light) */
+.dark .pc-glass { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); }
+.dark .pc-card { background: rgba(255,255,255,0.05); }
+.dark .pc-nav-item:hover { background: rgba(255,255,255,0.06); }
+.dark .pc-btn-ghost { background: rgba(255,255,255,0.06); }
+.dark .pc-chip { background: rgba(255,255,255,0.05); }
+.dark .pc-chip:hover { background: rgba(255,255,255,0.10); }
+.dark .pc-skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 100%); }
+.dark .pc-input, .dark .pc-select { background: rgba(255,255,255,0.06); }
 
 /* Base overrides */
 body {
@@ -291,9 +345,8 @@ body {
 }
 .pc-nav-item:hover { background: rgba(255,255,255,0.65); color: var(--pc-ink); }
 .pc-nav-item.active {
-  background: rgba(255,255,255,0.88);
-  color: var(--pc-ink);
-  box-shadow: var(--pc-shadow-sm);
+  background: var(--pc-accent-soft);
+  color: var(--pc-accent-strong);
   font-weight: 600;
 }
 .pc-nav-item:focus-visible {
@@ -332,8 +385,8 @@ body {
   outline: none;
 }
 .pc-input:focus, .pc-select:focus {
-  border-color: var(--pc-ink-2);
-  box-shadow: 0 0 0 2px rgba(46,42,38,0.12);
+  border-color: var(--pc-accent);
+  box-shadow: 0 0 0 3px var(--pc-accent-ring);
 }
 .pc-input::placeholder { color: var(--pc-ink-3); }
 @media (prefers-reduced-motion: reduce) {
@@ -369,9 +422,9 @@ body {
   color: var(--pc-ink);
 }
 .pc-btn-primary {
-  background: var(--pc-ink);
-  color: #fff;
-  border-color: var(--pc-ink);
+  background: var(--pc-accent);
+  color: var(--pc-accent-ink);
+  border-color: var(--pc-accent);
 }
 .pc-btn-success {
   background: var(--pc-groceries);
@@ -398,9 +451,9 @@ body {
 }
 .pc-chip:hover { background: rgba(255,255,255,0.90); color: var(--pc-ink); }
 .pc-chip.active {
-  background: var(--pc-ink);
-  color: #F4F1EA;
-  border-color: var(--pc-ink);
+  background: var(--pc-accent);
+  color: var(--pc-accent-ink);
+  border-color: var(--pc-accent);
 }
 .pc-chip:focus-visible { outline: 2px solid var(--pc-ink); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
@@ -419,3 +472,12 @@ body {
   margin-top: 12px;
 }
 .pc-day-header:first-child { margin-top: 0; }
+
+/* ── Shared keyframes (centralized — components no longer inject these) ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.pc-spin { animation: spin 1s linear infinite; }
+@keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) {
+  .pc-spin { animation: none; }
+  @keyframes bounce { 0%, 100% { transform: none; } }
+}

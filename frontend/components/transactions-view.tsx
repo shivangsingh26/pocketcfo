@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, Filter, ArrowDownLeft, ArrowUpRight } from "lucide-react";
-import { type Txn, CATEGORIES, inr } from "@/lib/api";
+import { Search, Filter, ArrowDownLeft, ArrowUpRight, Download } from "lucide-react";
+import { type Txn, CATEGORIES, categoryMeta, inr } from "@/lib/api";
+import { toDayKey, dayLabel } from "@/lib/date";
+import { toCsv, downloadCsv } from "@/lib/csv";
 import { TransactionRowSkeleton } from "@/components/skeletons";
 
 interface TransactionsViewProps {
@@ -19,29 +21,6 @@ interface FilterState {
   direction: Direction;
   category: string;   // "" = all
   merchant: string;
-}
-
-/** Format a date string as a day-group header label */
-function dayLabel(dateStr: string): string {
-  const d = new Date(dateStr + "T00:00:00");
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-
-  const isSameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
-
-  if (isSameDay(d, today)) return "Today";
-  if (isSameDay(d, yesterday)) return "Yesterday";
-
-  return d.toLocaleDateString("en-IN", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: d.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
-  });
 }
 
 /** Extract HH:MM from ISO timestamp */
@@ -117,8 +96,11 @@ export function TransactionsView({ transactions, loading, onRecategorize }: Tran
       if (filters.direction !== "all" && t.direction !== filters.direction) return false;
       if (filters.category && t.category_id !== filters.category) return false;
       if (filters.merchant) {
-        const hay = (t.merchant ?? "").toLowerCase();
-        if (!hay.includes(filters.merchant.toLowerCase())) return false;
+        const q = filters.merchant.toLowerCase().trim();
+        const merchantHit = (t.merchant ?? "").toLowerCase().includes(q);
+        const digits = q.replace(/[^0-9]/g, "");
+        const amountHit = digits !== "" && String(Math.round(Number(t.amount))).includes(digits);
+        if (!merchantHit && !amountHit) return false;
       }
       return true;
     });
@@ -128,7 +110,7 @@ export function TransactionsView({ transactions, loading, onRecategorize }: Tran
   const groups = useMemo(() => {
     const map = new Map<string, Txn[]>();
     for (const t of filtered) {
-      const dateKey = t.occurred_at.slice(0, 10);
+      const dateKey = toDayKey(t.occurred_at);
       if (!map.has(dateKey)) map.set(dateKey, []);
       map.get(dateKey)!.push(t);
     }
@@ -146,6 +128,28 @@ export function TransactionsView({ transactions, loading, onRecategorize }: Tran
     [filtered]
   );
 
+  function handleExport() {
+    const rows = filtered.map((t) => {
+      const d = new Date(t.occurred_at);
+      return {
+        date: toDayKey(t.occurred_at),
+        time: isNaN(d.getTime()) ? "" : d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false }),
+        merchant: t.merchant ?? "",
+        category: categoryMeta(t.category_id).label,
+        direction: t.direction,
+        amount: Math.round(Number(t.amount)),
+        source: t.source,
+      };
+    });
+    const csv = toCsv(rows, [
+      { key: "date", header: "Date" }, { key: "time", header: "Time" },
+      { key: "merchant", header: "Merchant" }, { key: "category", header: "Category" },
+      { key: "direction", header: "Direction" }, { key: "amount", header: "Amount (INR)" },
+      { key: "source", header: "Source" },
+    ]);
+    downloadCsv(`pocketcfo-transactions-${toDayKey(new Date())}.csv`, csv);
+  }
+
   const rangeOptions: { val: DateRange; label: string }[] = [
     { val: "7d", label: "7d" },
     { val: "30d", label: "30d" },
@@ -162,17 +166,27 @@ export function TransactionsView({ transactions, loading, onRecategorize }: Tran
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Header */}
-      <div>
-        <h2 className="pc-h2">Transactions</h2>
-        <p style={{ color: "var(--pc-ink-2)", fontSize: "0.875rem", marginTop: 4 }}>
-          {loading ? "Loading…" : `${filtered.length.toLocaleString("en-IN")} transactions`}
-          {!loading && filtered.length > 0 && (
-            <span className="pc-tabular">
-              {" "}· {inr(totalDebit)} spent
-              {totalCredit > 0 && ` · ${inr(totalCredit)} received`}
-            </span>
-          )}
-        </p>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+        <div style={{ flex: 1 }}>
+          <h2 className="pc-h2">Transactions</h2>
+          <p style={{ color: "var(--pc-ink-2)", fontSize: "0.875rem", marginTop: 4 }}>
+            {loading ? "Loading…" : `${filtered.length.toLocaleString("en-IN")} transactions`}
+            {!loading && filtered.length > 0 && (
+              <span className="pc-tabular">
+                {" "}· {inr(totalDebit)} spent
+                {totalCredit > 0 && ` · ${inr(totalCredit)} received`}
+              </span>
+            )}
+          </p>
+        </div>
+        <button
+          onClick={handleExport}
+          disabled={loading || filtered.length === 0}
+          className="pc-btn pc-btn-ghost"
+          aria-label="Export filtered transactions as CSV"
+        >
+          <Download size={14} strokeWidth={2} aria-hidden="true" /> Export CSV
+        </button>
       </div>
 
       {/* Filter bar */}
@@ -245,8 +259,8 @@ export function TransactionsView({ transactions, loading, onRecategorize }: Tran
             type="search"
             value={filters.merchant}
             onChange={(e) => patch("merchant", e.target.value)}
-            placeholder="Search merchant…"
-            aria-label="Search by merchant name"
+            placeholder="Search merchant or amount…"
+            aria-label="Search by merchant name or amount"
             className="pc-input"
             style={{ paddingLeft: 28, width: "100%" }}
           />

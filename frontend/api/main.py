@@ -98,13 +98,13 @@ def _run_gmail_imap_sync(days: int = 10):
         return 409, {"error": "Gmail IMAP not configured (set GMAIL_USER + "
                               "GMAIL_APP_PASSWORD)", "needs_gmail_imap": True}
     from pocketcfo.ingest.imap_gmail import fetch_icici
-    from pocketcfo.ingest.gmail import fetch_icici_transactions
     emails = fetch_icici(user, pwd, since_days=days)
-    parsed = fetch_icici_transactions(fetch_emails=lambda _q: emails)
     result = Pipeline(gmail_fetch=lambda _q: emails).sync_gmail()
     payload = result.model_dump()
     payload["fetched"] = len(emails)
-    payload["parsed"] = len(parsed)
+    # Derive the processed count from the pipeline result instead of parsing the
+    # emails a second time.
+    payload["parsed"] = payload.get("inserted", 0) + payload.get("skipped", 0) + payload.get("needs_review", 0)
     return 200, payload
 
 
@@ -131,8 +131,6 @@ async def cron_sync(request: Request):
         return JSONResponse(status_code=code, content=payload)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"cron sync failed: {exc}")
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
 
 
 # ---------------------------------------------------------------------------
