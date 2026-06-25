@@ -384,7 +384,9 @@ export function AppShell() {
             top: 0;
             left: 0;
             bottom: 0;
-            transform: translateX(-100%);
+            /* !important needed so the desktop base rule (transform:none
+               !important) does not keep the drawer on-screen on mobile. */
+            transform: translateX(-100%) !important;
           }
           .app-sidebar[data-open="true"] {
             transform: translateX(0) !important;
