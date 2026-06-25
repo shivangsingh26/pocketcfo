@@ -131,21 +131,25 @@
 
 /* ── PocketCFO design tokens ── */
 :root {
-  /* Warm cream base */
-  --pc-bg: #F4F1EA;
-  --pc-bg-2: #EDE9E0;       /* slightly darker cream for sidebar */
-  --pc-ink: #2E2A26;
-  --pc-ink-2: #5A5450;      /* secondary text */
-  --pc-ink-3: #9B9592;      /* muted text */
-  --pc-border: rgba(46, 42, 38, 0.10);
-  --pc-border-strong: rgba(46, 42, 38, 0.18);
+  /* Warm ivory base (luxe light) */
+  --pc-bg: #F5F3EC;
+  --pc-bg-2: #EEEAE0;       /* sidebar */
+  --pc-surface: rgba(255, 255, 255, 0.78);   /* card fill */
+  --pc-surface-2: rgba(255, 255, 255, 0.62); /* glass fill */
+  --pc-ink: #1C1A15;
+  --pc-ink-2: #57534A;      /* secondary text */
+  --pc-ink-3: #918B7E;      /* muted text */
+  --pc-border: rgba(28, 26, 21, 0.10);
+  --pc-border-strong: rgba(28, 26, 21, 0.16);
 
-  /* Accent (indigo/violet) */
-  --pc-accent: #5B4BE0;
-  --pc-accent-strong: #4A3BD0;
-  --pc-accent-soft: rgba(91, 75, 224, 0.12);
+  /* Accent — emerald (primary) + gold (premium highlight) */
+  --pc-accent: #0E9F6E;
+  --pc-accent-strong: #0B7C57;
+  --pc-accent-soft: rgba(14, 159, 110, 0.12);
   --pc-accent-ink: #FFFFFF;
-  --pc-accent-ring: rgba(91, 75, 224, 0.40);
+  --pc-accent-ring: rgba(14, 159, 110, 0.34);
+  --pc-gold: #B08431;
+  --pc-gold-soft: rgba(176, 132, 49, 0.14);
 
   /* Category pastels */
   --pc-food: #FFD8C2;
@@ -160,22 +164,22 @@
   --pc-other: #E4E0D8;
 
   /* Semantic */
-  --pc-credit: #3a8f6b;
+  --pc-credit: #0E9F6E;
   --pc-debit: var(--pc-ink);
-  --pc-danger: #C0453F;
-  --pc-danger-bg: #FDECEA;
-  --pc-warn-bg: #FCE3C3;
-  --pc-success-bg: #CDEAD9;
+  --pc-danger: #C7423B;
+  --pc-danger-bg: #FBEAE8;
+  --pc-warn-bg: #F6E7C8;
+  --pc-success-bg: #D6EBDD;
 
   /* Shape */
   --pc-radius: 16px;
   --pc-radius-sm: 10px;
   --pc-radius-lg: 22px;
 
-  /* Shadow scale */
-  --pc-shadow-sm: 0 1px 4px rgba(80, 80, 140, 0.08);
-  --pc-shadow-md: 0 4px 16px rgba(80, 80, 140, 0.12);
-  --pc-shadow-lg: 0 8px 32px rgba(80, 80, 140, 0.16);
+  /* Shadow scale (neutral, soft) */
+  --pc-shadow-sm: 0 1px 3px rgba(28, 26, 21, 0.06);
+  --pc-shadow-md: 0 6px 20px rgba(28, 26, 21, 0.09);
+  --pc-shadow-lg: 0 16px 44px rgba(28, 26, 21, 0.13);
 
   /* Sidebar */
   --pc-sidebar-w: 220px;
@@ -186,19 +190,23 @@
    Overlaps the shadcn .dark block above; both apply. This block sets the
    --pc-* vars the app actually uses. */
 .dark {
-  --pc-bg: #1A1822;
-  --pc-bg-2: #221F2E;
-  --pc-ink: #F2EFFA;
-  --pc-ink-2: #C3BED2;
-  --pc-ink-3: #8B859B;
-  --pc-border: rgba(255, 255, 255, 0.10);
-  --pc-border-strong: rgba(255, 255, 255, 0.20);
+  --pc-bg: #0B0E0C;
+  --pc-bg-2: #0F1310;
+  --pc-surface: #141815;
+  --pc-surface-2: rgba(255, 255, 255, 0.045);
+  --pc-ink: #ECEFEA;
+  --pc-ink-2: #A6ADA2;
+  --pc-ink-3: #6C7268;
+  --pc-border: rgba(255, 255, 255, 0.08);
+  --pc-border-strong: rgba(255, 255, 255, 0.16);
 
-  --pc-accent: #8B7BFF;
-  --pc-accent-strong: #A593FF;
-  --pc-accent-soft: rgba(139, 123, 255, 0.18);
-  --pc-accent-ink: #16121F;
-  --pc-accent-ring: rgba(139, 123, 255, 0.45);
+  --pc-accent: #2FD18C;
+  --pc-accent-strong: #57DCA4;
+  --pc-accent-soft: rgba(47, 209, 140, 0.15);
+  --pc-accent-ink: #06130D;
+  --pc-accent-ring: rgba(47, 209, 140, 0.40);
+  --pc-gold: #D4B978;
+  --pc-gold-soft: rgba(212, 185, 120, 0.16);
 
   --pc-food: #5A3D32;
   --pc-travel: #5A5230;
@@ -211,23 +219,28 @@
   --pc-shopping: #433A57;
   --pc-other: #3A3744;
 
-  --pc-credit: #5DCB97;
+  --pc-credit: #2FD18C;
   --pc-debit: var(--pc-ink);
-  --pc-danger: #E4736C;
-  --pc-danger-bg: #3A2422;
-  --pc-warn-bg: #43391F;
-  --pc-success-bg: #244536;
+  --pc-danger: #F0786F;
+  --pc-danger-bg: #2A1614;
+  --pc-warn-bg: #2A2310;
+  --pc-success-bg: #11271C;
+
+  /* Deeper, neutral elevation on near-black */
+  --pc-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45);
+  --pc-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --pc-shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.6);
 }
 
-/* Dark-aware surfaces (the glass/card/nav classes hardcode white in light) */
-.dark .pc-glass { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); }
-.dark .pc-card { background: rgba(255,255,255,0.05); }
-.dark .pc-nav-item:hover { background: rgba(255,255,255,0.06); }
-.dark .pc-btn-ghost { background: rgba(255,255,255,0.06); }
-.dark .pc-chip { background: rgba(255,255,255,0.05); }
-.dark .pc-chip:hover { background: rgba(255,255,255,0.10); }
-.dark .pc-skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 100%); }
-.dark .pc-input, .dark .pc-select { background: rgba(255,255,255,0.06); }
+/* Dark-aware surfaces — solid elevated cards on near-black for a luxe feel */
+.dark .pc-glass { background: var(--pc-surface-2); border-color: rgba(255,255,255,0.09); }
+.dark .pc-card { background: var(--pc-surface); }
+.dark .pc-nav-item:hover { background: rgba(255,255,255,0.05); }
+.dark .pc-btn-ghost { background: rgba(255,255,255,0.05); }
+.dark .pc-chip { background: rgba(255,255,255,0.04); }
+.dark .pc-chip:hover { background: rgba(255,255,255,0.09); }
+.dark .pc-skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 100%); }
+.dark .pc-input, .dark .pc-select { background: rgba(255,255,255,0.05); }
 
 /* Base overrides */
 body {
@@ -248,7 +261,7 @@ body {
 
 /* Glass card */
 .pc-glass {
-  background: rgba(255, 255, 255, 0.50);
+  background: var(--pc-surface-2);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.65);
@@ -257,7 +270,7 @@ body {
 
 /* Solid card */
 .pc-card {
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--pc-surface);
   border: 1px solid var(--pc-border);
   box-shadow: var(--pc-shadow-sm);
   border-radius: var(--pc-radius);
