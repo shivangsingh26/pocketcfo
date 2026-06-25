@@ -22,7 +22,23 @@ export function applyTheme(t: Theme): void {
   document.documentElement.style.colorScheme = t;
 }
 
+// ── Subscribable store so React can read the theme via useSyncExternalStore
+//    (avoids setState-in-effect). Theme changes only via setTheme + cross-tab
+//    storage events. ──
+type Listener = () => void;
+const listeners = new Set<Listener>();
+
+export function subscribeTheme(cb: Listener): () => void {
+  listeners.add(cb);
+  if (typeof window !== "undefined") window.addEventListener("storage", cb);
+  return () => {
+    listeners.delete(cb);
+    if (typeof window !== "undefined") window.removeEventListener("storage", cb);
+  };
+}
+
 export function setTheme(t: Theme): void {
   if (typeof localStorage !== "undefined") localStorage.setItem(STORAGE_KEY, t);
   applyTheme(t);
+  listeners.forEach((l) => l());
 }

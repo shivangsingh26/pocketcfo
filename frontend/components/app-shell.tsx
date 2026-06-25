@@ -84,6 +84,10 @@ export function AppShell() {
   }, []);
 
   useEffect(() => {
+    // Initial data load on mount. refresh() updates state after its async
+    // fetch (or synchronously in demo mode); this is the standard mount-fetch
+    // idiom and intentionally exempt from set-state-in-effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
     return () => { cancelRef.current = true; };
   }, [refresh]);

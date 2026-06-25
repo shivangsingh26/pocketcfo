@@ -15,12 +15,10 @@ export function CategoryDonut({ categories }: { categories: CategoryTotal[] }) {
   if (sum === 0) {
     return <div className="pc-card" style={{ padding: 20 }}><h3 className="pc-h3" style={{ fontSize: "0.9375rem" }}>Category split</h3><p style={{ color: "var(--pc-ink-3)", fontSize: "0.875rem", marginTop: 12 }}>No spend yet.</p></div>;
   }
-  let running = 0;
   const arcs = data.map((c, i) => {
     const frac = c.total / sum;
-    const seg = { c, i, dash: frac * C, offset: running };
-    running += frac * C;
-    return seg;
+    const precedingTotal = data.slice(0, i).reduce((s, x) => s + x.total, 0);
+    return { c, i, dash: frac * C, offset: (precedingTotal / sum) * C };
   });
   const focus = active != null ? data[active] : null;
 
