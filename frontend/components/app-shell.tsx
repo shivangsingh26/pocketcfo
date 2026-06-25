@@ -15,22 +15,27 @@ import { SyncUpload } from "@/components/sync-upload";
 import { OverviewView } from "@/components/overview-view";
 import { TransactionsView } from "@/components/transactions-view";
 import { BudgetsView } from "@/components/budgets-view";
+import { InsightsView } from "@/components/insights-view";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { isDemo, sampleCategories, sampleTransactions, sampleBudgets } from "@/lib/sample-data";
 import {
   LayoutDashboard,
   List,
   Target,
+  Sparkles,
   Menu,
   X,
   AlertTriangle,
 } from "lucide-react";
 
-type View = "overview" | "transactions" | "budgets";
+type View = "overview" | "transactions" | "budgets" | "insights";
 type LoadState = "loading" | "empty" | "error" | "ready";
 
 const NAV_ITEMS: { id: View; label: string; Icon: React.ComponentType<{ size?: number; strokeWidth?: number; "aria-hidden"?: boolean | "true" }> }[] = [
   { id: "overview",     label: "Overview",     Icon: LayoutDashboard },
   { id: "transactions", label: "Transactions", Icon: List },
   { id: "budgets",      label: "Budgets",      Icon: Target },
+  { id: "insights",     label: "Insights",     Icon: Sparkles },
 ];
 
 export function AppShell() {
@@ -48,6 +53,17 @@ export function AppShell() {
   const refresh = useCallback(async () => {
     cancelRef.current = false;
     setLoadState((prev) => (prev === "error" || prev === "empty" ? "loading" : prev));
+    if (isDemo()) {
+      const cats = sampleCategories();
+      const txns = sampleTransactions();
+      const bdg = sampleBudgets();
+      setCategories(cats);
+      setTransactions(txns);
+      setBudgetStatuses(bdg.statuses);
+      setNudges(bdg.nudges);
+      setLoadState("ready");
+      return;
+    }
     try {
       const [cats, txns, bdg] = await Promise.all([
         getSummary(),
@@ -74,10 +90,24 @@ export function AppShell() {
 
   const handleRecategorize = useCallback(
     async (id: string, categoryId: string) => {
-      await recategorize(id, categoryId);
-      await refresh();
+      let undo: Txn[] | null = null;
+      setTransactions((prev) => {
+        undo = prev;
+        return prev.map((t) => (String(t.id) === String(id) ? { ...t, category_id: categoryId } : t));
+      });
+      try {
+        await recategorize(id, categoryId);
+        if (!isDemo()) {
+          const [cats, bdg] = await Promise.all([getSummary(), getBudgets()]);
+          setCategories(cats);
+          setBudgetStatuses(bdg.statuses);
+          setNudges(bdg.nudges);
+        }
+      } catch {
+        if (undo) setTransactions(undo); // revert on failure
+      }
     },
-    [refresh]
+    []
   );
 
   const handleSetBudget = useCallback(
@@ -257,8 +287,11 @@ export function AppShell() {
             </p>
           </div>
 
-          {/* Sync + Upload */}
-          <SyncUpload onChanged={refresh} />
+          {/* Theme toggle + Sync + Upload */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <ThemeToggle />
+            <SyncUpload onChanged={refresh} />
+          </div>
         </header>
 
         {/* Scrollable content area */}
@@ -289,6 +322,9 @@ export function AppShell() {
               <span>
                 Backend not reachable ({errorMsg}). Showing empty state — start the API or upload a statement.
               </span>
+              <button onClick={refresh} className="pc-btn pc-btn-ghost" style={{ marginLeft: "auto", padding: "4px 10px" }}>
+                Retry
+              </button>
             </div>
           )}
 
@@ -318,6 +354,10 @@ export function AppShell() {
               onSetBudget={handleSetBudget}
             />
           )}
+
+          {view === "insights" && (
+            <InsightsView transactions={transactions} loading={isLoading} />
+          )}
         </main>
       </div>
 
@@ -334,7 +374,7 @@ export function AppShell() {
         }
 
         /* Tablet/mobile breakpoint */
-        @media (max-width: 767px) {
+        @media (max-width: 768px) {
           .app-sidebar {
             position: fixed !important;
             top: 0;
