@@ -187,11 +187,11 @@ function BudgetRow({ status: s }: { status: BudgetStatus }) {
               Over
             </span>
           ) : displayPct >= 80 ? (
-            <span className="pc-badge" style={{ background: "var(--pc-warn-bg)", color: "#8B5A00" }}>
+            <span className="pc-badge" style={{ background: "var(--pc-warn-bg)", color: "var(--pc-warn)" }}>
               {displayPct}%
             </span>
           ) : (
-            <span className="pc-badge" style={{ background: "var(--pc-success-bg)", color: "#276A4E" }}>
+            <span className="pc-badge" style={{ background: "var(--pc-success-bg)", color: "var(--pc-credit)" }}>
               <CheckCircle size={10} strokeWidth={2} style={{ marginRight: 3 }} aria-hidden="true" />
               {displayPct}%
             </span>

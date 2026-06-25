@@ -109,4 +109,13 @@ describe("savingsRate", () => {
   it("rate is 0 when no income", () => {
     expect(savingsRate([txn("A", "2026-06-02", 4000)], new Date(2026, 5, 15)).rate).toBe(0);
   });
+  it("exposes net (income - spend), positive when saving", () => {
+    const s = savingsRate([txn("S", "2026-06-01", 10000, "credit"), txn("A", "2026-06-02", 4000)], new Date(2026, 5, 15));
+    expect(s.net).toBe(6000);
+  });
+  it("net is negative when overspending (no panic percentage needed)", () => {
+    const s = savingsRate([txn("S", "2026-06-01", 78767, "credit"), txn("A", "2026-06-02", 527191)], new Date(2026, 5, 15));
+    expect(s.net).toBe(-448424);
+    expect(s.rate).toBeLessThan(0);
+  });
 });

@@ -166,8 +166,8 @@ export function CFOChat() {
               <div
                 style={{
                   maxWidth: "84%",
-                  background: isUser ? "rgba(46,42,38,0.88)" : "rgba(255,255,255,0.85)",
-                  color: isUser ? "#F4F1EA" : "var(--pc-ink)",
+                  background: isUser ? "var(--pc-accent)" : "var(--pc-surface)",
+                  color: isUser ? "var(--pc-accent-ink)" : "var(--pc-ink)",
                   borderRadius: isUser ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
                   padding: "10px 14px",
                   fontSize: "0.875rem",
@@ -187,10 +187,10 @@ export function CFOChat() {
           <div style={{ display: "flex", justifyContent: "flex-start" }}>
             <div
               style={{
-                background: "rgba(255,255,255,0.85)",
+                background: "var(--pc-surface)",
                 borderRadius: "14px 14px 14px 4px",
                 padding: "10px 16px",
-                border: "1px solid rgba(255,255,255,0.5)",
+                border: "1px solid var(--pc-border)",
                 display: "flex",
                 gap: 4,
                 alignItems: "center",
