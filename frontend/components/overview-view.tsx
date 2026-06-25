@@ -4,6 +4,7 @@ import { CategoryBento } from "@/components/category-bento";
 import { CategoryDonut } from "@/components/category-donut";
 import { SpendTrendChart } from "@/components/spend-trend-chart";
 import { TopCategoriesChart } from "@/components/top-categories-chart";
+import { RecurringPanel } from "@/components/recurring-panel";
 import { CFOChat } from "@/components/cfo-chat";
 import { HeroSkeleton, ChartSkeleton } from "@/components/skeletons";
 import { AlertTriangle, CheckCircle } from "lucide-react";
@@ -159,6 +160,11 @@ export function OverviewView({
                 })}
               </div>
             </section>
+          )}
+
+          {/* Recurring subscriptions (compact) */}
+          {!loading && (
+            <RecurringPanel transactions={transactions} compact />
           )}
         </div>
 
